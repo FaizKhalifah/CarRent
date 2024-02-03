@@ -8,6 +8,53 @@ const input = readlinePromises.createInterface({
 })
 
 async function main(){
+    let looping = true;
+    console.log("Selamat datang di aplikasi CarRent");
+    const username = await input.question("Masukkan nama usernamemu : ");
+    const password = await input.question("Masukkan password akunmu : ");
+    if(username=="admin" && password==123){
+        const OpsiAdmin = ["Lihat pesan", "Tambah User", "Tambah Mobil", "Tambah Peminjaman"];
+        console.log("Selamat datang admin");
+        while(looping){
+            for (let i in OpsiAdmin){
+                console.log(`${(Number(i)+1)} ${OpsiAdmin[i]}`);
+            }
+            let opsi = await input.question("Masukkan perintah yang kamu inginkan dalam angka : ");
+            if(opsi==1){
+                const arrayInbox = await showInbox();
+                console.log("Berikut adalah pesan yang ada di inbox");
+                console.log(arrayInbox);
+            }else if(opsi==2){
+
+            }else if(opsi==3){
+
+            }else if(opsi==4){
+
+            }else{
+                console.log("Perintah tidak dikenal");
+            }
+        }
+    }else{
+        let statusLogIn = await login(username,password);
+        if(statusLogIn==false){
+            console.log("Nama akun atau password salah");
+            let opsi = await input.question("Apakah kamu ingin membuat akun baru (ya/tidak)");
+            if(opsi.toLowerCase()=="ya"){
+                const usernameBaru = await input.question("Masukkan username barumu : ");
+                const passwordBaru = await input.question("Masukkan password barumu : ");
+                if(usernameBaru.toLowerCase()=="admin" || Number(passwordBaru)==123){
+                    console.log("Username atau password tidak valid");
+                }else{
+                    const statusRequest = await requestSignIn(usernameBaru,passwordBaru);
+                    console.log(statusRequest);
+                }
+            }else{
+                console.log("Keluar dari program");
+            }
+        }else{
+            console.log(`Selamat datang kembali ${username}`);
+        }
+    }
 
 }
 
@@ -70,31 +117,51 @@ async function addCar(merek,plat,keluaran){
     return "mobil berhasil ditambah ke stok"
 }
 
-async function addInbox(body,username){
-    const dataInbox = await fetchInbox();
-    await dataInbox.insertOne({
-        "body":body,
-        "username":username
-    })
-    return "pesan berhasil dikirim ke admin";
-}
-
 async function setCar(username,password,merek,plat){
     const user = await fetchUser();
+    const car = await fetchCar();
     const dataUser = {
         "nama":username,
         "password":password
     }
     const mobilPeminjaman = {
         "merek":merek,
-        "plat":plat
+        "plat":plat,
     }
     await user.updateOne(dataUser,{$push:{riwayat:mobilPeminjaman}});
+    await car.updateOne(mobilPeminjaman,{$set:{"status":"dipinjam"}});
     return "riwayat peminjaman berhasil ditambah";
 }
 
+async function requestCar(username,merek,plat){
+    const inbox = await fetchInbox();
+    const pesanInbox = {
+        "body":`${username} melakukan request peminjaman mobil merek ${merek} dengan plat ${plat}`,
+        "username":username
+    }
+    await inbox.insertOne(pesanInbox);
+    return "Request peminjaman berhasil dikirim";
 
-let tampilUser = await showUser();
-console.log(tampilUser);
-let tampilMobil = await showCar();
-console.log(tampilMobil);
+}
+
+async function requestSignIn(username,password){
+    const inbox = await fetchInbox();
+    const pesanInbox ={
+        "body":`Pengguna baru ingin membuat akun dengan username ${username} dan password ${password}`,
+        "username":"unidentified"
+    }
+    await inbox.insertOne(pesanInbox);
+    return "Permintaan sign in dikirim ke admin";
+}
+
+async function login(username,password){
+    const dataUser = await fetchUser();
+    const dataValid = await dataUser.findOne({nama:username,password:password});
+    if(dataValid==null){
+        return false;
+    }else{
+        return true;
+    }
+}
+
+main();

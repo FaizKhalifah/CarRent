@@ -13,7 +13,8 @@ async function main(){
     const username = await input.question("Masukkan nama usernamemu : ");
     const password = await input.question("Masukkan password akunmu : ");
     if(username=="admin" && password==123){
-        const OpsiAdmin = ["Lihat pesan", "Tambah User", "Tambah Mobil", "Tambah Peminjaman","Hapus Pesan","Daftar Mobil", "Daftar User"];
+        const OpsiAdmin = ["Lihat pesan", "Tambah User", "Tambah Mobil", "Tambah Peminjaman","Hapus Pesan","Daftar Mobil",
+         "Daftar User"];
         console.log("Selamat datang admin");
         while(looping){
             for (let i in OpsiAdmin){
@@ -44,6 +45,10 @@ async function main(){
                 const idPesan = await input.question("Masukkan id pesan yang ingin kamu hapus : ");
                 await deleteMessage(idPesan);
                 console.log("Pesan berhasil dihapus");
+            }else if(opsi==6){
+                await showCar();
+            }else if(opsi==7){
+                await showUser();
             }
         }
     }else{
@@ -96,17 +101,25 @@ async function fetchInbox(){
 async function showUser(){
     const dataUser = await fetchUser();
     const isiData = await dataUser.find().toArray();
-    if(isiData==[]){
+    if(isiData.length==0){
         console.log("Tidak ada user di database saat ini");
         return;
     }else{
+        console.log(isiData);
         return isiData;
     }
 }
 
 async function showCar(){
     const dataMobil = await fetchCar();
-    return (await dataMobil.find().toArray());
+    const isiData = await dataMobil.find().toArray();
+    if(isiData.length==0){
+        console.log("Tidak ada mobil di database");
+        return;
+    }else{
+        console.log(isiData);
+        return;
+    }
 }
 
 async function showInbox(){

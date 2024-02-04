@@ -83,8 +83,30 @@ async function main(){
             }
         }else{
             while(looping){
-                const opsiUser = ["Meminjam mobil","Mengembalikan mobil","keluar"];
+                const opsiUser = ["Meminjam mobil","Mengembalikan mobil","Status peminjaman","keluar"];
                 console.log(`Selamat datang kembali ${username}`);
+                for(let i in opsiUser){
+                    console.log(`${Number(i)+1} ${opsiUser[i]}`);
+                }
+                let opsi = await input.question("Masukkan layanan yang kamu inginkan (dalam angka): ");
+                if(opsi==1){
+                    await showCar();
+                    let merek = await input.question("Masukkan merek mobil yang ingin kamu pinjam : ");
+                    let plat = await input.question("Masukkan plat mobil yang ingin kamu pinjam");
+                    await requestCar(username,password,merek,plat);
+                    console.log("Request peminjaman telah dikirim ke admin");
+                }else if(opsi==2){
+                    let merek = await input.question("Masukkan merek mobil yang ingin kamu kembalikan : ");
+                    let plat = await input.question("Masukkan plat mobil tersebut : ");
+                    await requestReset(username,password,merek,plat);
+                    console.log("Pesan pengembalian telah dikirim ke admin");
+                }else if(opsi==3){
+                    await carStatus(username,password);
+                    console.log("Kembali ke halaman utama");
+                }else{
+                    console.log("Keluar dari program");
+                    process.exit(1);
+                }
             }
         }
     }
@@ -229,16 +251,43 @@ async function resetCar(username,password,merek,plat){
 }
    
 
-async function requestCar(username,merek,plat){
+async function requestCar(username,password,merek,plat){
     let idPesan = Math.floor(Math.random()*100000);
     const inbox = await fetchInbox();
     const pesanInbox = {
-        "body":`${username} melakukan request peminjaman mobil merek ${merek} dengan plat ${plat}`,
+        "body":`${username} dengan password ${password} melakukan request peminjaman mobil merek ${merek} dengan plat ${plat}`,
         "username":username,
         "idPesan":idPesan
     }
     await inbox.insertOne(pesanInbox);
     return;
+}
+
+async function requestReset(username,password,merek,plat){
+    let idPesan = Math.floor(Math.random()*100000);
+    const inbox = await fetchInbox();
+    const pesanInbox = {
+        "body":`${username} dengan password ${password} melakukan request pengembalian mobil merek ${merek} dengan plat ${plat}`,
+        "username":username,
+        "idPesan":idPesan
+    }
+    await inbox.insertOne(pesanInbox);
+    return;
+}
+
+async function carStatus(username,password){
+    const dataUser = await fetchUser();
+    const user = await dataUser.findOne({
+         "nama":username,
+        "password":password
+    });
+    if(user.riwayat.length==0){
+        console.log("Kamu sedang tidak meminjam mobil saat ini");
+    }else{
+        console.log((user.riwayat));
+    }
+    return;
+
 }
 
 async function deleteMessage(idPesan){

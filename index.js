@@ -21,9 +21,7 @@ async function main(){
             }
             let opsi = await input.question("Masukkan perintah yang kamu inginkan dalam angka : ");
             if(opsi==1){
-                const arrayInbox = await showInbox();
-                console.log("Berikut adalah pesan yang ada di inbox");
-                console.log(arrayInbox);
+                await showInbox();
             }else if(opsi==2){
                 const usernameBaru = await input.question("Masukkan username baru : ");
                 const passwordBaru = await input.question("Masukkan password baru : ");
@@ -42,6 +40,10 @@ async function main(){
                 const plat = await input.question("Masukkan plat nomor mobil tersebut : ");
                 await setCar(usernamePeminjam,passwordPeminjam,merek,plat);
                 console.log("Kembali ke menu awal");
+            }else if(opsi==5){
+                const idPesan = await input.question("Masukkan id pesan yang ingin kamu hapus : ");
+                await deleteMessage(idPesan);
+                console.log("Pesan berhasil dihapus");
             }
         }
     }else{
@@ -55,8 +57,8 @@ async function main(){
                 if(usernameBaru.toLowerCase()=="admin" || Number(passwordBaru)==123){
                     console.log("Username atau password tidak valid");
                 }else{
-                    const statusRequest = await requestSignIn(usernameBaru,passwordBaru);
-                    console.log(statusRequest);
+                    await requestSignIn(usernameBaru,passwordBaru);
+                    console.log("Request telah dikirm ke admin");
                 }
             }else{
                 console.log("Keluar dari program");
@@ -93,7 +95,13 @@ async function fetchInbox(){
 
 async function showUser(){
     const dataUser = await fetchUser();
-    return (await dataUser.find().toArray());
+    const isiData = await dataUser.find().toArray();
+    if(isiData==[]){
+        console.log("Tidak ada user di database saat ini");
+        return;
+    }else{
+        return isiData;
+    }
 }
 
 async function showCar(){
@@ -103,7 +111,14 @@ async function showCar(){
 
 async function showInbox(){
     const dataInbox = await fetchInbox();
-    return (await dataInbox.find().toArray());
+    const isiInbox = await dataInbox.find().toArray();
+    if(isiInbox.length==0){
+        console.log("Tidak ada pesan untuk saat ini");
+        return;
+    }else{
+        console.log(isiInbox);
+        return;
+    }
 }
 
 async function addUser(username,password){
@@ -158,21 +173,31 @@ async function setCar(username,password,merek,plat){
    
 
 async function requestCar(username,merek,plat){
+    let idPesan = Math.floor(Math.random()*1000);
     const inbox = await fetchInbox();
     const pesanInbox = {
         "body":`${username} melakukan request peminjaman mobil merek ${merek} dengan plat ${plat}`,
-        "username":username
+        "username":username,
+        "idPesan":idPesan
     }
     await inbox.insertOne(pesanInbox);
     return;
 
 }
 
+async function deleteMessage(idPesan){
+    const inbox = await fetchInbox();
+    await inbox.deleteOne({idPesan:Number(idPesan)});
+    return;
+}
+
 async function requestSignIn(username,password){
+    let idPesan = Math.floor(Math.random()*1000);
     const inbox = await fetchInbox();
     const pesanInbox ={
         "body":`Pengguna baru ingin membuat akun dengan username ${username} dan password ${password}`,
-        "username":"unidentified"
+        "username":"unidentified",
+        "idPesan":idPesan
     }
     await inbox.insertOne(pesanInbox);
     return;

@@ -13,7 +13,7 @@ async function main(){
     const username = await input.question("Masukkan nama usernamemu : ");
     const password = await input.question("Masukkan password akunmu : ");
     if(username=="admin" && password==123){
-        const OpsiAdmin = ["Lihat pesan", "Tambah User", "Tambah Mobil", "Tambah Peminjaman"];
+        const OpsiAdmin = ["Lihat pesan", "Tambah User", "Tambah Mobil", "Tambah Peminjaman","Hapus Pesan","Daftar Mobil", "Daftar User"];
         console.log("Selamat datang admin");
         while(looping){
             for (let i in OpsiAdmin){
@@ -25,13 +25,23 @@ async function main(){
                 console.log("Berikut adalah pesan yang ada di inbox");
                 console.log(arrayInbox);
             }else if(opsi==2){
-
+                const usernameBaru = await input.question("Masukkan username baru : ");
+                const passwordBaru = await input.question("Masukkan password baru : ");
+                await addUser(usernameBaru,passwordBaru);
+                console.log("User berhasil ditambahkan ke database");
             }else if(opsi==3){
-
+                const merek = await input.question("Masukkan merek mobil yang ingin ditambahkan ke stok : ");
+                const plat = await input.question("Masukkan nomor plat mobil tersebut : ");
+                const keluaran = await input.question("Masukkan tahun keluaran mobil tersebut : ");
+                await addCar(merek,plat,Number(keluaran));
+                console.log("Mobil berhasil ditambah ke stok");
             }else if(opsi==4){
-
-            }else{
-                console.log("Perintah tidak dikenal");
+                const usernamePeminjam = await input.question("Masukkan username yang ingin meminjam mobil : ");
+                const passwordPeminjam = await input.question("Masukkan password peminjam : ");
+                const merek = await input.question("Masukkan merek mobil yang diminta oleh user : ");
+                const plat = await input.question("Masukkan plat nomor mobil tersebut : ");
+                await setCar(usernamePeminjam,passwordPeminjam,merek,plat);
+                console.log("Kembali ke menu awal");
             }
         }
     }else{
@@ -103,7 +113,7 @@ async function addUser(username,password){
         "password":password,
         "riwayat":[]
     })
-    return "user telah ditambah";
+    return;
 }
 
 async function addCar(merek,plat,keluaran){
@@ -114,7 +124,7 @@ async function addCar(merek,plat,keluaran){
         "keluaran":keluaran,
         "status":"tersedia"
     })
-    return "mobil berhasil ditambah ke stok"
+    return;
 }
 
 async function setCar(username,password,merek,plat){
@@ -128,10 +138,24 @@ async function setCar(username,password,merek,plat){
         "merek":merek,
         "plat":plat,
     }
-    await user.updateOne(dataUser,{$push:{riwayat:mobilPeminjaman}});
-    await car.updateOne(mobilPeminjaman,{$set:{"status":"dipinjam"}});
-    return "riwayat peminjaman berhasil ditambah";
-}
+    const statusUser = await car.findOne(dataUser);
+    const statusMobil = await car.findOne(mobilPeminjaman);
+    if(statusUser==null){
+        console.log("Username tidak terdeteksi");
+        return;
+    }else{
+        if(statusMobil == null){
+            console.log("Mobil tidak tersedia");
+            return;
+        }else{
+            await user.updateOne(dataUser,{$push:{riwayat:mobilPeminjaman}});
+            await car.updateOne(mobilPeminjaman,{$set:{"status":"dipinjam"}});
+            return;
+        }
+    }
+  
+    }
+   
 
 async function requestCar(username,merek,plat){
     const inbox = await fetchInbox();
@@ -140,7 +164,7 @@ async function requestCar(username,merek,plat){
         "username":username
     }
     await inbox.insertOne(pesanInbox);
-    return "Request peminjaman berhasil dikirim";
+    return;
 
 }
 
@@ -151,7 +175,7 @@ async function requestSignIn(username,password){
         "username":"unidentified"
     }
     await inbox.insertOne(pesanInbox);
-    return "Permintaan sign in dikirim ke admin";
+    return;
 }
 
 async function login(username,password){

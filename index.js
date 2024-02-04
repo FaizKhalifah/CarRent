@@ -14,7 +14,7 @@ async function main(){
     const password = await input.question("Masukkan password akunmu : ");
     if(username=="admin" && password==123){
         const OpsiAdmin = ["Lihat pesan", "Tambah User", "Tambah Mobil", "Tambah Peminjaman","Hapus Pesan","Daftar Mobil",
-         "Daftar User"];
+         "Daftar User","Hapus peminjaman","Hapus mobil"];
         console.log("Selamat datang admin");
         while(looping){
             for (let i in OpsiAdmin){
@@ -44,11 +44,24 @@ async function main(){
             }else if(opsi==5){
                 const idPesan = await input.question("Masukkan id pesan yang ingin kamu hapus : ");
                 await deleteMessage(idPesan);
-                console.log("Pesan berhasil dihapus");
             }else if(opsi==6){
                 await showCar();
             }else if(opsi==7){
                 await showUser();
+            }else if(opsi==8){
+                const usernamePeminjam = await input.question("Masukkan username yang ingin mengembalikan mobil : ");
+                const passwordPeminjam = await input.question("Masukkan password peminjam tersebut : ");
+                const merek = await input.question("Masukkan merek mobil yang ingin dikembalikan : ");
+                const plat = await input.question("Masukkan plat nomor mobil tersebut : ");
+                await resetCar(usernamePeminjam,passwordPeminjam,merek,plat);
+                console.log("Kembali ke menu awal");
+            }else if(opsi==9){
+                const merek = await input.question("Masukkan merek mobil yang ingin dihapus : ");
+                const plat = await input.question("Masukkan plat mobil tersebut : ");
+                await deleteCar(merek,plat);
+            }else{
+                console.log("Keluar dari program");
+                process.exit(1);
             }
         }
     }else{
@@ -69,7 +82,10 @@ async function main(){
                 console.log("Keluar dari program");
             }
         }else{
-            console.log(`Selamat datang kembali ${username}`);
+            while(looping){
+                const opsiUser = ["Meminjam mobil","Mengembalikan mobil","keluar"];
+                console.log(`Selamat datang kembali ${username}`);
+            }
         }
     }
 
@@ -183,10 +199,38 @@ async function setCar(username,password,merek,plat){
     }
   
     }
+
+async function resetCar(username,password,merek,plat){
+    const user = await fetchUser();
+    const car = await fetchCar();
+    const dataUser = {
+        "nama":username,
+        "password":password
+    }
+    const mobilPeminjaman = {
+        "merek":merek,
+        "plat":plat,
+    }
+    const statusUser = await car.findOne(dataUser);
+    const statusMobil = await car.findOne(mobilPeminjaman);
+    if(statusUser==null){
+        console.log("Username tidak terdeteksi");
+        return;
+    }else{
+        if(statusMobil == null){
+            console.log("Mobil tidak terdeteksi");
+            return;
+        }else{
+            await user.updateOne(dataUser,{$pull:{riwayat:mobilPeminjaman}});
+            await car.updateOne(mobilPeminjaman,{$set:{"status":"tersedia"}});
+            return;
+        }
+    }
+}
    
 
 async function requestCar(username,merek,plat){
-    let idPesan = Math.floor(Math.random()*1000);
+    let idPesan = Math.floor(Math.random()*100000);
     const inbox = await fetchInbox();
     const pesanInbox = {
         "body":`${username} melakukan request peminjaman mobil merek ${merek} dengan plat ${plat}`,
@@ -195,17 +239,47 @@ async function requestCar(username,merek,plat){
     }
     await inbox.insertOne(pesanInbox);
     return;
-
 }
 
 async function deleteMessage(idPesan){
     const inbox = await fetchInbox();
-    await inbox.deleteOne({idPesan:Number(idPesan)});
-    return;
+    if((await inbox.find().toArray()).length==0){
+        console.log("Tidak ada pesan untuk saat ini");
+    }else{
+        const status = await inbox.deleteOne({idPesan:Number(idPesan)});
+        if(status.deletedCount==0){
+            console.log("pesan tidak dideteksi");
+            return;
+        }else{
+            console.log("Pesan berhasil dihapus");
+            return;
+        }
+    }
+}
+
+async function deleteCar(merek,plat){
+    const car = await fetchCar();
+    if((await car.find().toArray()).length==0){
+        console.log("Tidak ada mobil saat ini di database");
+    }else{
+       const status= await car.deleteOne({
+            "merek":merek,
+            "plat":plat
+        })
+        if(status.deletedCount==0){
+            console.log("Mobil tidak ditemukan");
+            return;
+        }else{
+            console.log("Mobil berhasil dihapus");
+            return;
+        }
+        
+    }
+
 }
 
 async function requestSignIn(username,password){
-    let idPesan = Math.floor(Math.random()*1000);
+    let idPesan = Math.floor(Math.random()*100000);
     const inbox = await fetchInbox();
     const pesanInbox ={
         "body":`Pengguna baru ingin membuat akun dengan username ${username} dan password ${password}`,

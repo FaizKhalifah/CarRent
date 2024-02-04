@@ -82,9 +82,9 @@ async function main(){
                 console.log("Keluar dari program");
             }
         }else{
+            console.log(`Selamat datang kembali ${username}`);
             while(looping){
                 const opsiUser = ["Meminjam mobil","Mengembalikan mobil","Status peminjaman","keluar"];
-                console.log(`Selamat datang kembali ${username}`);
                 for(let i in opsiUser){
                     console.log(`${Number(i)+1} ${opsiUser[i]}`);
                 }
@@ -92,7 +92,7 @@ async function main(){
                 if(opsi==1){
                     await showCar();
                     let merek = await input.question("Masukkan merek mobil yang ingin kamu pinjam : ");
-                    let plat = await input.question("Masukkan plat mobil yang ingin kamu pinjam");
+                    let plat = await input.question("Masukkan plat mobil yang ingin kamu pinjam : ");
                     await requestCar(username,password,merek,plat);
                     console.log("Request peminjaman telah dikirim ke admin");
                 }else if(opsi==2){
@@ -197,14 +197,14 @@ async function setCar(username,password,merek,plat){
     const user = await fetchUser();
     const car = await fetchCar();
     const dataUser = {
-        "nama":username,
-        "password":password
+        nama:username,
+        password:password
     }
     const mobilPeminjaman = {
-        "merek":merek,
-        "plat":plat,
+        merek:merek,
+        plat:plat,
     }
-    const statusUser = await car.findOne(dataUser);
+    const statusUser = await user.findOne(dataUser);
     const statusMobil = await car.findOne(mobilPeminjaman);
     if(statusUser==null){
         console.log("Username tidak terdeteksi");
@@ -215,7 +215,8 @@ async function setCar(username,password,merek,plat){
             return;
         }else{
             await user.updateOne(dataUser,{$push:{riwayat:mobilPeminjaman}});
-            await car.updateOne(mobilPeminjaman,{$set:{"status":"dipinjam"}});
+            await car.updateOne(mobilPeminjaman,{$set:{status:"dipinjam"}});
+            console.log("Mobil berhasil dipinjamkan");
             return;
         }
     }

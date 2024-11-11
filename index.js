@@ -4,6 +4,7 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
+import authRouter from "./routes/authRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,14 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+
+//routes
+app.get('/', (req,res)=>{
+    res.send("welcome to carRent");
+})
+app.use(authRouter);
+
+//starting server
 const port = '3000';
 const connection ='mongodb://localhost:27017/carRent';
 mongoose.connect(connection)
